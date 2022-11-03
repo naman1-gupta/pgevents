@@ -16,7 +16,7 @@ logger = get_logger(__name__)
 class EventProducer(ABC):
 
     def __init__(self, *, qconnector_cls, event_cls, pg_host, pg_port, pg_database, pg_user, pg_password,
-                 pg_tables, pg_replication_slot, **kwargs):
+                 pg_tables, pg_replication_slot, whitelist_columns, **kwargs):
 
         self.__shutdown = False
         self.event_cls = event_cls
@@ -25,6 +25,10 @@ class EventProducer(ABC):
         self.__db_cur: Union[psycopg2.cursor, None] = None
 
         self.__pg_tables = pg_tables
+        self.__whitelist_columns = None
+        if whitelist_columns:
+            self.__whitelist_columns = whitelist_columns.split(',')
+        
         self.__pg_replication_slot = pg_replication_slot
 
         self.__pg_host = pg_host
@@ -81,6 +85,14 @@ class EventProducer(ABC):
 
             modified_event: BaseEvent
             event_routing_key, modified_event = self.get_event_routing_key_and_event(table_name, event)
+
+
+            if self.__whitelist_columns:
+                for column in self.__whitelist_columns:
+                    diff_columns = ['{}.{}'.format(event.table_name, diff_column) for diff_column in event.diff.keys()]
+                    if len(list(set(diff_columns) & set(self.__whitelist_columns))) == 0:
+                        logger.info('filtered out message because it does not fall under whitelist')
+                        event_routing_key = None
 
             # If no routing key is provided, then the event will not be queued
             if event_routing_key is not None:

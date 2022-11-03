@@ -21,7 +21,8 @@ logger = log.get_logger(__name__)
 @click.option('--pg_tables', default=lambda: os.environ.get('PGTABLES', None), required=False, help='Restrict to specific tables e.g. public.transactions,public.reports')
 @click.option('--rabbitmq_url', default=lambda: os.environ.get('RABBITMQ_URL', None), required=True, help='RabbitMQ url ($RABBITMQ_URL)')
 @click.option('--rabbitmq_exchange', default=lambda: os.environ.get('RABBITMQ_EXCHANGE', None), required=True, help='RabbitMQ exchange ($RABBITMQ_EXCHANGE)')
-def produce(pg_host, pg_port, pg_database, pg_user, pg_password, pg_replication_slot, pg_tables, rabbitmq_url, rabbitmq_exchange):
+@click.option('--whitelist_columns', default=lambda: os.environ.get('PGCOLUMNWHITELIST', None), required=False, help='Changes related to this column will be published')
+def produce(pg_host, pg_port, pg_database, pg_user, pg_password, pg_replication_slot, pg_tables, rabbitmq_url, rabbitmq_exchange, whitelist_columns):
     p = EventProducer(
         qconnector_cls=RabbitMQConnector,
         event_cls=BaseEvent,
@@ -33,7 +34,8 @@ def produce(pg_host, pg_port, pg_database, pg_user, pg_password, pg_replication_
         pg_replication_slot=pg_replication_slot,
         pg_tables=pg_tables,
         rabbitmq_url=rabbitmq_url,
-        rabbitmq_exchange=rabbitmq_exchange
+        rabbitmq_exchange=rabbitmq_exchange,
+        whitelist_columns=whitelist_columns
     )
 
     signal.signal(signal.SIGTERM, p.shutdown)
