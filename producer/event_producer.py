@@ -28,7 +28,7 @@ class EventProducer(ABC):
         self.__whitelist_columns = None
         if whitelist_columns:
             self.__whitelist_columns = whitelist_columns.split(',')
-        
+
         self.__pg_replication_slot = pg_replication_slot
 
         self.__pg_host = pg_host
@@ -86,7 +86,6 @@ class EventProducer(ABC):
             modified_event: BaseEvent
             event_routing_key, modified_event = self.get_event_routing_key_and_event(table_name, event)
 
-
             if self.__whitelist_columns:
                 for column in self.__whitelist_columns:
                     diff_columns = ['{}.{}'.format(event.table_name, diff_column) for diff_column in event.diff.keys()]
@@ -111,7 +110,7 @@ class EventProducer(ABC):
             self.msg_processor(msg=msg)
             self.check_shutdown()
 
-        self.__db_cur.consume_stream(consume=stream_consumer)
+        self.__db_cur.consume_stream(consume=stream_consumer, keepalive_interval=10)
 
     def get_event_routing_key_and_event(self, table_name: str, event: BaseEvent) -> (str, BaseEvent):
         return table_name, event
