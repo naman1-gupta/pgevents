@@ -48,7 +48,11 @@ class EventProducer(ABC):
             dbname=self.__pg_database,
             user=self.__pg_user,
             password=self.__pg_password,
-            connection_factory=self.__pg_connection_factory
+            connection_factory=self.__pg_connection_factory,
+            keepalives=1,
+            keepalives_idle=30,
+            keepalives_interval=10,
+            keepalives_count=5
         )
         self.__db_cur = self.__db_conn.cursor()
 
